@@ -1,0 +1,37 @@
+{
+    "name": "stackchat.js",
+    "version": "1.0.1",
+    "description": "Stack Exchange chat bot library for Node.js",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "test": "node src/test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hyper-neutrino/stackchat.js.git"
+    },
+    "keywords": [
+        "Stack",
+        "Exchange",
+        "SE",
+        "chat",
+        "bot",
+        "chatbot"
+    ],
+    "author": "hyper-neutrino",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/hyper-neutrino/stackchat.js/issues"
+    },
+    "homepage": "https://github.com/hyper-neutrino/stackchat.js#readme",
+    "dependencies": {
+        "file-ez": "^1.0.0",
+        "fs": "^0.0.1-security",
+        "he": "^1.2.0",
+        "http": "^0.0.1-security",
+        "https": "^1.0.0",
+        "node-html-parser": "^5.3.3",
+        "ws": "^8.5.0"
+    }
+}

@@ -1,3 +1,6 @@
+creds
+creds/*
+
 # Logs
 logs
 *.log
