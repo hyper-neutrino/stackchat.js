@@ -1,7 +1,15 @@
+import he from "he";
+import { parse } from "node-html-parser";
 import { loadCredentials, saveCredentials } from "../lib/credentials.js";
 import request from "../lib/request.js";
 import { Jar } from "../lib/jar.js";
-import { ClientError, LoginError, MessageError } from "./errors.js";
+import {
+    ClientError,
+    LoginError,
+    MessageDeleteError,
+    MessageEditError,
+    MessageError,
+} from "./errors.js";
 import { Room } from "./room.js";
 
 export class Client {
@@ -12,6 +20,7 @@ export class Client {
         this.listeners = new Map();
         this.queue = [];
         this.busy = false;
+        this.userId = null;
     }
 
     async request(url, { payload, headers, options } = {}) {
@@ -101,6 +110,15 @@ export class Client {
             this.jar.importJar(oldCredentials.jar);
             this.fkey = oldCredentials.fkey;
         }
+
+        const res = await this.request("https://chat.stackexchange.com");
+
+        this.userId = parseInt(
+            parse(res.body)
+                .querySelector(".topbar-menu-links a")
+                .getAttribute("href")
+                .match(/\/users\/(\d+)\/.+/)[1]
+        );
     }
 
     async logout() {
@@ -110,6 +128,32 @@ export class Client {
 
         this.jar.clear();
         this.fkey = null;
+    }
+
+    async fetchUser(userId) {
+        const html = parse(
+            (
+                await this.request(
+                    `https://chat.stackexchange.com/users/${userId}`
+                )
+            ).body
+        );
+
+        return {
+            name: he.decode(
+                html.querySelector("#content .subheader h1").innerHTML
+            ),
+            mod:
+                html
+                    .querySelector(".user-status")
+                    .innerHTML.indexOf("&#9830;") != -1,
+            createdAt: new Date(
+                ...html
+                    .querySelector(".user-stats tbody tr td.user-valuecell")
+                    .innerHTML.split("-")
+                    .map((num, index) => parseInt(num) - (index == 1 ? 1 : 0))
+            ),
+        };
     }
 
     async joinRoom(id, { messageCacheLimit } = {}) {
@@ -167,23 +211,100 @@ export class Client {
         });
     }
 
-    async send(room, content) {
+    async send(roomId, content) {
         const res = await this.queueRequest(
-            `https://chat.stackexchange.com/chats/${room}/messages/new`,
+            `https://chat.stackexchange.com/chats/${roomId}/messages/new`,
             {
                 payload: {
                     fkey: this.fkey,
                     text: content,
                 },
                 headers: {
-                    Referer: `https://chat.stackexchange.com/rooms/${room}`,
+                    Referer: `https://chat.stackexchange.com/rooms/${roomId}`,
                     Origin: "https://chat.stackexchange.com",
                 },
             }
         );
 
+        if (res.statusCode == 404) {
+            throw new MessageError("404");
+        }
+
         if (res.body.indexOf("The message is too long") != -1) {
             throw new MessageError("message is too long");
+        }
+
+        return JSON.parse(res.body).id;
+    }
+
+    async editMessage(roomId, messageId, content) {
+        const res = await this.queueRequest(
+            `https://chat.stackexchange.com/messages/${messageId}`,
+            {
+                payload: {
+                    fkey: this.fkey,
+                    text: content,
+                },
+                headers: {
+                    Referer: `https://chat.stackexchange.com/rooms/${roomId}`,
+                },
+            }
+        );
+
+        if (res.statusCode == 404) {
+            throw new MessageEditError("404");
+        }
+
+        if (res.body.indexOf("The message is too long") != -1) {
+            throw new MessageEditError("message is too long");
+        }
+
+        if (res.body.indexOf("It is too late to edit this message") != -1) {
+            throw new MessageEditError("too late to edit message");
+        }
+
+        if (
+            res.body.indexOf(
+                "The message has been deleted and cannot be edited"
+            ) != -1
+        ) {
+            throw new MessageEditError("cannot edit deleted message");
+        }
+
+        if (res.body.indexOf("You can only edit your own messages") != -1) {
+            throw new MessageEditError("cannot edit others' messages");
+        }
+
+        return res;
+    }
+
+    async deleteMessage(roomId, messageId) {
+        const res = await this.queueRequest(
+            `https://chat.stackexchange.com/messages/${messageId}/delete`,
+            {
+                payload: {
+                    fkey: this.fkey,
+                },
+                headers: {
+                    Referer: `https://chat.stackexchange.com/rooms/${roomId}`,
+                },
+            }
+        );
+
+        if (res.statusCode == 404) {
+            throw new MessageDeleteError("404");
+        }
+
+        if (res.body.indexOf("This message has already been deleted") != -1) {
+            throw new MessageDeleteError("cannot delete deleted message");
+        }
+
+        if (res.body.indexOf("It is too late to delete this message") != -1) {
+            throw new MessageDeleteError("too late to delete message");
+        }
+
+        if (res.body.indexOf("You can only delete your own messages") != -1) {
+            throw new MessageDeleteError("cannot delete others' messages");
         }
 
         return res;

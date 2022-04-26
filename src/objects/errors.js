@@ -20,5 +20,7 @@ class RethrownError extends Error {
 
 export class ClientError extends RethrownError {}
 export class LoginError extends RethrownError {}
+export class MessageDeleteError extends RethrownError {}
+export class MessageEditError extends RethrownError {}
 export class MessageError extends RethrownError {}
 export class WebsocketError extends RethrownError {}

@@ -82,6 +82,11 @@ export class Room {
 
             for (const event of info.e) {
                 event.room = this;
+                event.client = this.client;
+
+                if (event.message_id) {
+                    event.transcript_link = `https://chat.stackexchange.com/transcript/message/${event.message_id}`;
+                }
 
                 if (messageEvents.has(event.event_type)) {
                     event.reply = (content) =>
@@ -89,7 +94,10 @@ export class Room {
                 }
 
                 if (event.user_name) {
-                    event.mention = `@${event.user_name.split(/\s+/).join("")}`;
+                    event.mention = `@${event.user_name.replaceAll(
+                        /\s+/g,
+                        ""
+                    )}`;
                 }
 
                 switch (event.event_type) {
@@ -181,6 +189,14 @@ export class Room {
 
     async send(content) {
         return await this.client.send(this.id, content);
+    }
+
+    async editMessage(messageId, content) {
+        return await this.client.editMessage(this.id, messageId, content);
+    }
+
+    async deleteMessage(messageId) {
+        return await this.client.deleteMessage(this.id, messageId);
     }
 
     on(event, listener) {

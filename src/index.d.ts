@@ -33,14 +33,22 @@ export class Client {
         resolve: Function;
     }[];
     busy: Boolean;
+    userId?: Number;
 
     request(url: String, { ...RequestOptions }): Promise<Response>;
     login(site: String, email: String, password: String): Promise<void>;
     logout(): Promise<void>;
+    fetchUser(userId: Number | String): Promise<User>;
     joinRoom(id: Number, { messageCacheLimit: Number }): Promise<Room>;
     runQueue(): void;
     queueRequest(url: String, options: RequestOptions): Promise<Response>;
-    send(room: Number, content: String): Promise<Response>;
+    send(room: Number, content: String): Promise<Number>;
+    editMessage(
+        roomId: Number,
+        messageId: Number,
+        content: String
+    ): Promise<Response>;
+    deleteMessage(roomId: Number, messageId: Number): Promise<Response>;
     on(event: EventType, listener: Function): void;
     trigger(event: EventType, ...data: any[]): void;
 }
@@ -63,7 +71,7 @@ export class Room {
     toString(): String;
     fetchName(): Promise<String>;
     connectWs(): Promise<void>;
-    send(content: String): Promise<Response>;
+    send(content: String): Promise<Number>;
     on(event: EventType, listener: Function): void;
     trigger(event: EventType, ...data: any[]): void;
 }
@@ -74,8 +82,6 @@ export function request(
     { ...RequestOptions, jar: Jar }
 ): Promise<Response>;
 
-export type RequestOptions = { payload?: any; headers?: any; options?: any };
-export type Response = { statusCode: Number; body: String };
 export type EventType =
     | "messageCreate"
     | "messageUpdate"
@@ -96,3 +102,6 @@ export type EventType =
     | "feedTicker"
     | "userSuspensionAdd"
     | "userSuspensionRemove";
+export type RequestOptions = { payload?: any; headers?: any; options?: any };
+export type Response = { statusCode: Number; body: String };
+export type User = { name: String; mod: Boolean; createdAt: Date };
