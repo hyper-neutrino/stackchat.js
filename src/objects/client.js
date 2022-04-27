@@ -144,6 +144,7 @@ export class Client {
             name: he.decode(
                 html.querySelector("#content .subheader h1").innerHTML
             ),
+            avatar: html.querySelector(".usercard-xxl img").getAttribute("src"),
             mod:
                 html
                     .querySelector(".user-status")
