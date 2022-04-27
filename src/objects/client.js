@@ -9,6 +9,7 @@ import {
     MessageDeleteError,
     MessageEditError,
     MessageError,
+    MessageStarError,
 } from "./errors.js";
 import { Room } from "./room.js";
 
@@ -221,7 +222,6 @@ export class Client {
                 },
                 headers: {
                     Referer: `https://chat.stackexchange.com/rooms/${roomId}`,
-                    Origin: "https://chat.stackexchange.com",
                 },
             }
         );
@@ -305,6 +305,26 @@ export class Client {
 
         if (res.body.indexOf("You can only delete your own messages") != -1) {
             throw new MessageDeleteError("cannot delete others' messages");
+        }
+
+        return res;
+    }
+
+    async pinMessage(roomId, messageId) {
+        const res = await this.queueRequest(
+            `https://chat.stackexchange.com/messages/${messageId}/owner-star`,
+            {
+                payload: {
+                    fkey: this.fkey,
+                },
+                headers: {
+                    Referer: `https://chat.stackexchange.com/rooms/${roomId}`,
+                },
+            }
+        );
+
+        if (res.statusCode == 404) {
+            throw new MessageStarError("404");
         }
 
         return res;

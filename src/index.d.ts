@@ -49,14 +49,18 @@ export class Client {
         content: String
     ): Promise<Response>;
     deleteMessage(roomId: Number, messageId: Number): Promise<Response>;
+    pinMessage(roomId: Number, messageId: Number): Promise<Response>;
     on(event: EventType, listener: Function): void;
     trigger(event: EventType, ...data: any[]): void;
 }
 
 export class ClientError extends Error {}
 export class LoginError extends Error {}
+export class MessageDeleteError extends Error {}
+export class MessageEditError extends Error {}
 export class MessageError extends Error {}
-export class WebhookError extends Error {}
+export class MessageStarError extends Error {}
+export class WebsocketError extends Error {}
 
 export class Room {
     client: Client;
@@ -72,6 +76,9 @@ export class Room {
     fetchName(): Promise<String>;
     connectWs(): Promise<void>;
     send(content: String): Promise<Number>;
+    editMessage(messageId: Number, content: String): Promise<Response>;
+    deleteMessage(messageId: Number): Promise<Response>;
+    pinMessage(messageId: Number): Promise<Response>;
     on(event: EventType, listener: Function): void;
     trigger(event: EventType, ...data: any[]): void;
 }

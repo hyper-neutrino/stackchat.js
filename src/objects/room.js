@@ -199,6 +199,10 @@ export class Room {
         return await this.client.deleteMessage(this.id, messageId);
     }
 
+    async pinMessage(messageId) {
+        return await this.client.pinMessage(this.id, messageId);
+    }
+
     on(event, listener) {
         if (!this.listeners.has(event)) this.listeners.set(event, []);
         this.listeners.get(event).push(listener);
