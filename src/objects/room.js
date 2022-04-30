@@ -81,6 +81,8 @@ export class Room {
             if (!info || !info.e) return;
 
             for (const event of info.e) {
+                const string = JSON.stringify(event);
+
                 event.room = this;
                 event.client = this.client;
 
@@ -179,8 +181,7 @@ export class Room {
 
                         break;
                     default:
-                        delete event.room;
-                        console.log(JSON.stringify(event));
+                        console.log(string);
                         break;
                 }
             }
